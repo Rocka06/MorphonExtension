@@ -13,12 +13,6 @@ protected:
     static void _bind_methods();
 
 public:
-    virtual Dictionary serialize()
-    {
-        Dictionary dict;
-        return dict;
-    }
-    virtual void deserialize(const Dictionary &data)
-    {
-    }
+    virtual Dictionary _serialize();
+    virtual void _deserialize(const Dictionary &data) {}
 };

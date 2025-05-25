@@ -1,16 +1,14 @@
 #include "SerializableResource.h"
 #include <godot_cpp/core/class_db.hpp>
 
-using namespace godot;
+Dictionary SerializableResource::_serialize()
+{
+    Dictionary dict;
+    return dict;
+}
 
 void SerializableResource::_bind_methods()
 {
-    ClassDB::add_virtual_method(
-        "SerializableResource",
-        MethodInfo(Variant::DICTIONARY, "serialize"),
-        {"self"});
-    ClassDB::add_virtual_method(
-        "SerializableResource",
-        MethodInfo("deserialize", PropertyInfo(Variant::DICTIONARY, "data")),
-        {"self", "data"});
+    ClassDB::add_virtual_method("SerializableResource", MethodInfo(Variant::DICTIONARY, "_serialize"));
+    ClassDB::add_virtual_method("SerializableResource", MethodInfo("_deserialize", PropertyInfo(Variant::DICTIONARY, "data")));
 }

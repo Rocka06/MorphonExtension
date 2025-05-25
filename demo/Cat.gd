@@ -5,11 +5,11 @@ class_name Cat extends Animal
 func Speak():
 	print("meow")
 
-func serialize() -> Dictionary:
-	var dict := super.serialize()
+func _serialize() -> Dictionary:
+	var dict := super._serialize()
 	dict["color"] = color.to_html()
 	return dict
 
-func deserialize(data: Dictionary) -> void:
-	super.deserialize(data)
+func _deserialize(data: Dictionary) -> void:
+	super._deserialize(data)
 	color = data["color"]

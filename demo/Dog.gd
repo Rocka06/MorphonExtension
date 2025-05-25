@@ -5,11 +5,11 @@ class_name Dog extends Animal
 func Speak():
 	print("bark")
 
-func serialize() -> Dictionary:
-	var dict := super.serialize()
+func _serialize() -> Dictionary:
+	var dict := super._serialize()
 	dict["type"] = type
 	return dict
 
-func deserialize(data: Dictionary) -> void:
-	super.deserialize(data)
+func _deserialize(data: Dictionary) -> void:
+	super._deserialize(data)
 	type = data["type"]

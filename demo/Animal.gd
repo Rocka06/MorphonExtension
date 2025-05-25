@@ -6,13 +6,13 @@ class_name Animal extends SerializableResource
 func Speak():
 	print("speak")
 
-func serialize() -> Dictionary:
+func _serialize() -> Dictionary:
 	var dict : Dictionary
 	dict["name"] = name
 	dict["age"] = age
 	
 	return dict
 	
-func deserialize(data: Dictionary):
+func _deserialize(data: Dictionary):
 	name = data["name"]
 	age = data["age"]

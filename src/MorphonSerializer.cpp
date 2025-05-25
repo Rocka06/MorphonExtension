@@ -2,7 +2,7 @@
 
 Dictionary SerializeSerializableResource(SerializableResource &res)
 {
-    Dictionary data = res.call("serialize");
+    Dictionary data = res.call("_serialize");
     Ref<Script> s = res.get_script();
     data["ScriptPath"] = s->get_path();
     return data;
@@ -26,7 +26,7 @@ Ref<SerializableResource> DeserializeSerializableResource(const Dictionary &data
     Ref<SerializableResource> res = memnew(SerializableResource);
     res->set_script(script);
 
-    res->call("deserialize", data);
+    res->call("_deserialize", data);
     return res;
 }
 

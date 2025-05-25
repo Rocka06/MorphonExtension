@@ -133,7 +133,7 @@ Error MorphonConfigFile::load(const String &p_path)
     f->close();
     clear();
 
-    Ref<JSON> json = memnew(JSON);
+    JSON *json = memnew(JSON);
     Error err = json->parse(stringData);
 
     if (err != OK)
@@ -143,6 +143,7 @@ Error MorphonConfigFile::load(const String &p_path)
     }
 
     Variant jsonVariant = json->get_data();
+    memdelete(json);
 
     if (jsonVariant.get_type() != Variant::DICTIONARY)
         return ERR_INVALID_DATA;

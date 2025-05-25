@@ -1,9 +1,10 @@
-[gd_scene load_steps=10 format=3 uid="uid://cgv238y0s71ab"]
+[gd_scene load_steps=11 format=3 uid="uid://cgv238y0s71ab"]
 
 [ext_resource type="Script" uid="uid://bbfutgsjvqep2" path="res://Test.gd" id="1_wtcfe"]
 [ext_resource type="Script" uid="uid://dohyl58aklhff" path="res://Dog.gd" id="2_0e48y"]
 [ext_resource type="Script" uid="uid://bj5no25l2hbw1" path="res://Animal.gd" id="3_0hol4"]
 [ext_resource type="Script" uid="uid://ckx4nodr4nsyn" path="res://Cat.gd" id="4_q6r6c"]
+[ext_resource type="SpriteFrames" uid="uid://drq5a2qiid27j" path="res://Test.tres" id="5_q6r6c"]
 
 [sub_resource type="SerializableResource" id="SerializableResource_epypp"]
 script = ExtResource("2_0e48y")
@@ -46,3 +47,6 @@ dict = Dictionary[int, ExtResource("2_0e48y")]({
 423: SubResource("SerializableResource_0e48y")
 })
 arr = Array[ExtResource("3_0hol4")]([SubResource("SerializableResource_0hol4"), SubResource("SerializableResource_q6r6c"), SubResource("SerializableResource_kdubu")])
+sf = ExtResource("5_q6r6c")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
