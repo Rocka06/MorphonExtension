@@ -3,6 +3,7 @@
 Dictionary SerializeSerializableResource(SerializableResource &res)
 {
     Dictionary data = res.call("_serialize");
+    data = SerializeRecursive(data);
     Ref<Script> s = res.get_script();
     data["ScriptPath"] = s->get_path();
     return data;
@@ -100,23 +101,31 @@ Variant DeserializeRecursive(const Variant &var)
         {
             return ResourceLoader::get_singleton()->load(str);
         }
+        return var;
     }
     case Variant::DICTIONARY:
     {
         Dictionary dict = var;
 
-        if (dict.has("ScriptPath"))
-        {
-            return DeserializeSerializableResource(dict);
-        }
-
         Dictionary result;
         Array keys = dict.keys();
         for (int i = 0; i < keys.size(); ++i)
         {
+            if (keys[i] == "ScriptPath")
+            {
+                // If we are deserializing a SerializableResources properties, we want to keep this one
+                result[keys[i]] = dict[keys[i]];
+                continue;
+            }
+
             Variant key = DeserializeRecursive(keys[i]);
             Variant val = DeserializeRecursive(dict[keys[i]]);
             result[key] = val;
+        }
+
+        if (dict.has("ScriptPath"))
+        {
+            return DeserializeSerializableResource(result);
         }
         return result;
     }

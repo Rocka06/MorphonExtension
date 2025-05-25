@@ -20,6 +20,10 @@ func _ready():
 	$AnimatedSprite2D.sprite_frames = config.get_value("Test", "SF")
 	$AnimatedSprite2D.play("new_animation")
 	
+	var dog := config.get_value("Pets", "Dog") as Dog
+	
+	$Sprite2D.texture = dog.icon
+	
 	var loadedArr := config.get_value("Pets", "Arr") as Array
 	for i in loadedArr:
 		i.Speak();

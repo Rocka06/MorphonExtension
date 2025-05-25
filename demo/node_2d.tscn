@@ -1,52 +1,24 @@
-[gd_scene load_steps=11 format=3 uid="uid://cgv238y0s71ab"]
+[gd_scene load_steps=6 format=3 uid="uid://cgv238y0s71ab"]
 
 [ext_resource type="Script" uid="uid://bbfutgsjvqep2" path="res://Test.gd" id="1_wtcfe"]
 [ext_resource type="Script" uid="uid://dohyl58aklhff" path="res://Dog.gd" id="2_0e48y"]
-[ext_resource type="Script" uid="uid://bj5no25l2hbw1" path="res://Animal.gd" id="3_0hol4"]
-[ext_resource type="Script" uid="uid://ckx4nodr4nsyn" path="res://Cat.gd" id="4_q6r6c"]
+[ext_resource type="Texture2D" uid="uid://c83fil2png5vg" path="res://icon.svg" id="2_0hol4"]
 [ext_resource type="SpriteFrames" uid="uid://drq5a2qiid27j" path="res://Test.tres" id="5_q6r6c"]
 
-[sub_resource type="SerializableResource" id="SerializableResource_epypp"]
+[sub_resource type="SerializableResource" id="SerializableResource_d21ai"]
 script = ExtResource("2_0e48y")
-type = "Test"
-name = "Doggo"
-age = 4
-metadata/_custom_type_script = "uid://dohyl58aklhff"
-
-[sub_resource type="SerializableResource" id="SerializableResource_0e48y"]
-script = ExtResource("2_0e48y")
-type = "41"
-name = "321"
-age = 423
-metadata/_custom_type_script = "uid://dohyl58aklhff"
-
-[sub_resource type="SerializableResource" id="SerializableResource_0hol4"]
-script = ExtResource("3_0hol4")
-name = ""
-age = 0
-metadata/_custom_type_script = "uid://bj5no25l2hbw1"
-
-[sub_resource type="SerializableResource" id="SerializableResource_q6r6c"]
-script = ExtResource("4_q6r6c")
-color = Color(0, 0, 0, 1)
-name = ""
-age = 0
-metadata/_custom_type_script = "uid://ckx4nodr4nsyn"
-
-[sub_resource type="SerializableResource" id="SerializableResource_kdubu"]
-script = ExtResource("2_0e48y")
-type = ""
-name = ""
-age = 0
+type = "Golden Retriever"
+name = "Test"
+age = 2
+icon = ExtResource("2_0hol4")
 metadata/_custom_type_script = "uid://dohyl58aklhff"
 
 [node name="Node2D" type="Node2D"]
 script = ExtResource("1_wtcfe")
-res = SubResource("SerializableResource_epypp")
-dict = Dictionary[int, ExtResource("2_0e48y")]({
-423: SubResource("SerializableResource_0e48y")
-})
-arr = Array[ExtResource("3_0hol4")]([SubResource("SerializableResource_0hol4"), SubResource("SerializableResource_q6r6c"), SubResource("SerializableResource_kdubu")])
+res = SubResource("SerializableResource_d21ai")
 sf = ExtResource("5_q6r6c")
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+position = Vector2(174.165, 0)
