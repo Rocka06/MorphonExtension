@@ -4,59 +4,59 @@ void MorphonConfigFile::set_value(const String &p_section, const String &p_key, 
 {
     if (p_value.get_type() == Variant::NIL)
     { // Erase key.
-        if (!values.has(p_section))
+        if (!m_Values.has(p_section))
         {
             return;
         }
 
-        values[p_section].erase(p_key);
-        if (values[p_section].is_empty())
+        m_Values[p_section].erase(p_key);
+        if (m_Values[p_section].is_empty())
         {
-            values.erase(p_section);
+            m_Values.erase(p_section);
         }
 
         return;
     }
 
-    if (!values.has(p_section))
+    if (!m_Values.has(p_section))
     {
         // Insert section-less keys at the beginning.
-        values.insert(p_section, HashMap<String, Variant>(), p_section.is_empty());
+        m_Values.insert(p_section, HashMap<String, Variant>(), p_section.is_empty());
     }
 
-    values[p_section][p_key] = p_value;
+    m_Values[p_section][p_key] = p_value;
 }
 
 Variant MorphonConfigFile::get_value(const String &p_section, const String &p_key, const Variant &p_default) const
 {
-    if (!values.has(p_section) || !values[p_section].has(p_key))
+    if (!m_Values.has(p_section) || !m_Values[p_section].has(p_key))
     {
         ERR_FAIL_COND_V_MSG(p_default.get_type() == Variant::NIL, Variant(),
                             vformat("Couldn't find the given section \"%s\" and key \"%s\", and no default was given.", p_section, p_key));
         return p_default;
     }
 
-    return values[p_section][p_key];
+    return m_Values[p_section][p_key];
 }
 
 bool MorphonConfigFile::has_section(const String &p_section) const
 {
-    return values.has(p_section);
+    return m_Values.has(p_section);
 }
 
 bool MorphonConfigFile::has_section_key(const String &p_section, const String &p_key) const
 {
-    if (!values.has(p_section))
+    if (!m_Values.has(p_section))
     {
         return false;
     }
-    return values[p_section].has(p_key);
+    return m_Values[p_section].has(p_key);
 }
 
 PackedStringArray MorphonConfigFile::get_sections() const
 {
     PackedStringArray array;
-    for (const KeyValue<String, HashMap<String, Variant>> &E : values)
+    for (const KeyValue<String, HashMap<String, Variant>> &E : m_Values)
     {
         array.push_back(E.key);
     }
@@ -68,10 +68,10 @@ PackedStringArray MorphonConfigFile::get_section_keys(const String &p_section) c
 {
     PackedStringArray array;
 
-    if (!values.has(p_section))
+    if (!m_Values.has(p_section))
         return array;
 
-    for (const KeyValue<String, Variant> &E : values[p_section])
+    for (const KeyValue<String, Variant> &E : m_Values[p_section])
     {
         array.push_back(E.key);
     }
@@ -81,20 +81,121 @@ PackedStringArray MorphonConfigFile::get_section_keys(const String &p_section) c
 
 void MorphonConfigFile::erase_section(const String &p_section)
 {
-    ERR_FAIL_COND_MSG(!values.has(p_section), vformat("Cannot erase nonexistent section \"%s\".", p_section));
-    values.erase(p_section);
+    ERR_FAIL_COND_MSG(!m_Values.has(p_section), vformat("Cannot erase nonexistent section \"%s\".", p_section));
+    m_Values.erase(p_section);
 }
 
 void MorphonConfigFile::erase_section_key(const String &p_section, const String &p_key)
 {
-    ERR_FAIL_COND_MSG(!values.has(p_section), vformat("Cannot erase key \"%s\" from nonexistent section \"%s\".", p_key, p_section));
-    ERR_FAIL_COND_MSG(!values[p_section].has(p_key), vformat("Cannot erase nonexistent key \"%s\" from section \"%s\".", p_key, p_section));
+    ERR_FAIL_COND_MSG(!m_Values.has(p_section), vformat("Cannot erase key \"%s\" from nonexistent section \"%s\".", p_key, p_section));
+    ERR_FAIL_COND_MSG(!m_Values[p_section].has(p_key), vformat("Cannot erase nonexistent key \"%s\" from section \"%s\".", p_key, p_section));
 
-    values[p_section].erase(p_key);
-    if (values[p_section].is_empty())
+    m_Values[p_section].erase(p_key);
+    if (m_Values[p_section].is_empty())
     {
-        values.erase(p_section);
+        m_Values.erase(p_section);
     }
+}
+
+Error MorphonConfigFile::save(const String &p_path)
+{
+    Ref<FileAccess> f = FileAccess::open(p_path, FileAccess::WRITE);
+    if (f.is_null())
+        return f->get_open_error();
+
+    Dictionary dict;
+    for (auto i : m_Values)
+    {
+        Dictionary nestedDict;
+        for (auto j : i.value)
+        {
+            nestedDict[j.key] = SerializeRecursive(j.value);
+        }
+
+        dict[i.key] = nestedDict;
+    }
+
+    String jsonData = JSON::stringify(dict);
+    f->store_string(jsonData);
+    f->close();
+
+    return OK;
+}
+
+Error MorphonConfigFile::load(const String &p_path)
+{
+    Ref<FileAccess> f = FileAccess::open(p_path, FileAccess::READ);
+
+    if (f.is_null())
+        return f->get_open_error();
+
+    Variant stringData = f->get_as_text();
+    f->close();
+    clear();
+
+    Ref<JSON> json = memnew(JSON);
+    Error err = json->parse(stringData);
+
+    if (err != OK)
+    {
+        print_line("JSON Parse Error: ", err);
+        return err;
+    }
+
+    Variant jsonVariant = json->get_data();
+
+    if (jsonVariant.get_type() != Variant::DICTIONARY)
+        return ERR_INVALID_DATA;
+
+    Dictionary dict = jsonVariant;
+    Array keys = dict.keys();
+
+    for (int i = 0; i < keys.size(); i++)
+    {
+        Variant key = keys[i];
+        Variant value = dict[key];
+
+        if (value.get_type() != Variant::DICTIONARY)
+        {
+            clear();
+            return ERR_INVALID_DATA;
+        }
+
+        Dictionary valueDict = value;
+        Array valueKeys = valueDict.keys();
+
+        for (int j = 0; j < valueKeys.size(); j++)
+        {
+            Variant key1 = valueKeys[j];
+            Variant value1 = valueDict[key1];
+
+            m_Values[key][key1] = DeserializeRecursive(value1);
+        }
+    }
+
+    return OK;
+}
+
+void MorphonConfigFile::clear()
+{
+    m_Values.clear();
+}
+
+Variant MorphonConfigFile::HandleResourceSerialization(Object &obj)
+{
+    Resource *res = Object::cast_to<Resource>(&obj);
+    SerializableResource *sRes = Object::cast_to<SerializableResource>(&obj);
+
+    if (sRes != nullptr)
+        return SerializeSerializableResource(*sRes);
+
+    if (res == nullptr)
+        return Variant();
+
+    if (res->is_local_to_scene())
+        return Variant();
+
+    return res->get_path();
 }
 
 void MorphonConfigFile::_bind_methods()
@@ -111,17 +212,16 @@ void MorphonConfigFile::_bind_methods()
     ClassDB::bind_method(D_METHOD("erase_section", "section"), &MorphonConfigFile::erase_section);
     ClassDB::bind_method(D_METHOD("erase_section_key", "section", "key"), &MorphonConfigFile::erase_section_key);
 
-    /*ClassDB::bind_method(D_METHOD("load", "path"), &MorphonConfigFile::load);
-    ClassDB::bind_method(D_METHOD("parse", "data"), &MorphonConfigFile::parse);
+    ClassDB::bind_method(D_METHOD("load", "path"), &MorphonConfigFile::load);
     ClassDB::bind_method(D_METHOD("save", "path"), &MorphonConfigFile::save);
 
-    ClassDB::bind_method(D_METHOD("encode_to_text"), &MorphonConfigFile::encode_to_text);
+    /*ClassDB::bind_method(D_METHOD("encode_to_text"), &MorphonConfigFile::encode_to_text);
 
     ClassDB::bind_method(D_METHOD("load_encrypted", "path", "key"), &MorphonConfigFile::load_encrypted);
     ClassDB::bind_method(D_METHOD("load_encrypted_pass", "path", "password"), &MorphonConfigFile::load_encrypted_pass);
 
     ClassDB::bind_method(D_METHOD("save_encrypted", "path", "key"), &MorphonConfigFile::save_encrypted);
-    ClassDB::bind_method(D_METHOD("save_encrypted_pass", "path", "password"), &MorphonConfigFile::save_encrypted_pass);
+    ClassDB::bind_method(D_METHOD("save_encrypted_pass", "path", "password"), &MorphonConfigFile::save_encrypted_pass);*/
 
-    ClassDB::bind_method(D_METHOD("clear"), &MorphonConfigFile::clear);*/
+    ClassDB::bind_method(D_METHOD("clear"), &MorphonConfigFile::clear);
 }

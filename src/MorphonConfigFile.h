@@ -1,17 +1,20 @@
 #pragma once
 #include <godot_cpp/templates/hash_map.hpp>
 #include <godot_cpp/classes/json.hpp>
+#include <godot_cpp/classes/file_access.hpp>
 #include "SerializableResource.h"
+#include "MorphonSerializer.h"
 
 using namespace godot;
 
-class MorphonConfigFile : public JSON
+class MorphonConfigFile : public RefCounted
 {
-    GDCLASS(MorphonConfigFile, JSON)
+    GDCLASS(MorphonConfigFile, RefCounted)
 
 private:
-	HashMap<String, HashMap<String, Variant>> values;
-    void NewKey(const String &p_section, const String &p_key);
+    HashMap<String, HashMap<String, Variant>> m_Values;
+    Error parse(const String &p_data);
+    Variant HandleResourceSerialization(Object &obj);
 
 protected:
     static void _bind_methods();
@@ -26,7 +29,6 @@ public:
     void erase_section(const String &p_section);
     void erase_section_key(const String &p_section, const String &p_key);
     Error load(const String &p_path);
-    Error parse(const String &p_data);
     Error save(const String &p_path);
     String encode_to_text() const;
     Error load_encrypted(const String &p_path, const PackedByteArray &p_key);

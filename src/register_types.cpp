@@ -16,7 +16,7 @@ void initialize_example_module(ModuleInitializationLevel p_level)
         return;
     }
 
-    GDREGISTER_ABSTRACT_CLASS(SerializableResource)
+    GDREGISTER_CLASS(SerializableResource)
     GDREGISTER_CLASS(MorphonConfigFile)
 }
 

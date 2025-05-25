@@ -1,6 +1,7 @@
 #pragma once
 
-#include <godot_cpp/classes/sprite2d.hpp>
+#include <godot_cpp/variant/dictionary.hpp>
+#include <godot_cpp/classes/resource.hpp>
 
 using namespace godot;
 
@@ -12,6 +13,12 @@ protected:
     static void _bind_methods();
 
 public:
-    virtual Dictionary serialize() const = 0;
-    virtual void deserialize(const Dictionary &data) = 0;
+    virtual Dictionary serialize()
+    {
+        Dictionary dict;
+        return dict;
+    }
+    virtual void deserialize(const Dictionary &data)
+    {
+    }
 };

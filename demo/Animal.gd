@@ -1,9 +1,18 @@
 class_name Animal extends SerializableResource
 
+@export var name : String 
+@export var age : int
+
+func Speak():
+	print("speak")
+
 func serialize() -> Dictionary:
-	print("hello")
+	var dict : Dictionary
+	dict["name"] = name
+	dict["age"] = age
 	
-	return {}
+	return dict
 	
 func deserialize(data: Dictionary):
-	print("hello")
+	name = data["name"]
+	age = data["age"]
