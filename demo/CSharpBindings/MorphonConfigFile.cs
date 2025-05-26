@@ -54,6 +54,10 @@ public partial class MorphonConfigFile : RefCounted
     {
         return m_Config.As<GodotObject>().Call("encode_to_text").As<string>();
     }
+    public Error Parse(string data)
+    {
+        return m_Config.As<GodotObject>().Call("parse", data).As<Error>();
+    }
     public Error LoadEncrypted(string path, byte[] key)
     {
         return m_Config.As<GodotObject>().Call("load_encrypted", path, key).As<Error>();

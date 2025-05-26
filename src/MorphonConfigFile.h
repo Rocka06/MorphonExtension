@@ -13,8 +13,6 @@ class MorphonConfigFile : public RefCounted
 
 private:
     HashMap<String, HashMap<String, Variant>> m_Values;
-    Error parse(const String &p_data);
-    Error MorphonConfigFile::ParseString(const String &stringData);
 
 protected:
     static void _bind_methods();
@@ -28,12 +26,13 @@ public:
     PackedStringArray get_section_keys(const String &p_section) const;
     void erase_section(const String &p_section);
     void erase_section_key(const String &p_section, const String &p_key);
+    Error parse(const String &data);
     Error load(const String &p_path);
-    Error save(const String &p_path);
-    String encode_to_text() const;
     Error load_encrypted(const String &p_path, const PackedByteArray &p_key);
     Error load_encrypted_pass(const String &p_path, const String &p_password);
-    Error save_encrypted(const String &p_path, const PackedByteArray &p_key);
-    Error save_encrypted_pass(const String &p_path, const String &p_password);
+    String encode_to_text() const;
+    Error save(const String &p_path) const;
+    Error save_encrypted(const String &p_path, const PackedByteArray &p_key) const;
+    Error save_encrypted_pass(const String &p_path, const String &p_password) const;
     void clear();
 };

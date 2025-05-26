@@ -97,7 +97,7 @@ void MorphonConfigFile::erase_section_key(const String &p_section, const String 
     }
 }
 
-Error MorphonConfigFile::save(const String &p_path)
+Error MorphonConfigFile::save(const String &p_path) const
 {
     Ref<FileAccess> f = FileAccess::open(p_path, FileAccess::WRITE);
     if (f.is_null())
@@ -120,7 +120,7 @@ Error MorphonConfigFile::load(const String &p_path)
     f->close();
     clear();
 
-    return ParseString(stringData);
+    return parse(stringData);
 }
 
 String MorphonConfigFile::encode_to_text() const
@@ -139,66 +139,11 @@ String MorphonConfigFile::encode_to_text() const
 
     return JSON::stringify(dict);
 }
-
-Error MorphonConfigFile::load_encrypted(const String &p_path, const PackedByteArray &p_key)
-{
-    Ref<FileAccess> f = FileAccess::open_encrypted(p_path, FileAccess::READ, p_key);
-
-    if (f.is_null())
-        return f->get_open_error();
-
-    String stringData = f->get_as_text();
-    f->close();
-    clear();
-
-    return ParseString(stringData);
-}
-Error MorphonConfigFile::load_encrypted_pass(const String &p_path, const String &p_password)
-{
-    Ref<FileAccess> f = FileAccess::open_encrypted_with_pass(p_path, FileAccess::READ, p_password);
-
-    if (f.is_null())
-        return f->get_open_error();
-
-    String stringData = f->get_as_text();
-    f->close();
-    clear();
-
-    return ParseString(stringData);
-}
-Error MorphonConfigFile::save_encrypted(const String &p_path, const PackedByteArray &p_key)
-{
-    Ref<FileAccess> f = FileAccess::open_encrypted(p_path, FileAccess::WRITE, p_key);
-    if (f.is_null())
-        return f->get_open_error();
-
-    f->store_string(encode_to_text());
-    f->close();
-
-    return OK;
-}
-Error MorphonConfigFile::save_encrypted_pass(const String &p_path, const String &p_password)
-{
-    Ref<FileAccess> f = FileAccess::open_encrypted_with_pass(p_path, FileAccess::WRITE, p_password);
-    if (f.is_null())
-        return f->get_open_error();
-
-    f->store_string(encode_to_text());
-    f->close();
-
-    return OK;
-}
-
-void MorphonConfigFile::clear()
-{
-    m_Values.clear();
-}
-
-Error MorphonConfigFile::ParseString(const String &stringData)
+Error MorphonConfigFile::parse(const String &data)
 {
     Ref<JSON> json;
     json.instantiate();
-    Error err = json->parse(stringData);
+    Error err = json->parse(data);
 
     if (err != OK)
     {
@@ -239,6 +184,60 @@ Error MorphonConfigFile::ParseString(const String &stringData)
     return OK;
 }
 
+Error MorphonConfigFile::load_encrypted(const String &p_path, const PackedByteArray &p_key)
+{
+    Ref<FileAccess> f = FileAccess::open_encrypted(p_path, FileAccess::READ, p_key);
+
+    if (f.is_null())
+        return f->get_open_error();
+
+    String stringData = f->get_as_text();
+    f->close();
+    clear();
+
+    return parse(stringData);
+}
+Error MorphonConfigFile::load_encrypted_pass(const String &p_path, const String &p_password)
+{
+    Ref<FileAccess> f = FileAccess::open_encrypted_with_pass(p_path, FileAccess::READ, p_password);
+
+    if (f.is_null())
+        return f->get_open_error();
+
+    String stringData = f->get_as_text();
+    f->close();
+    clear();
+
+    return parse(stringData);
+}
+Error MorphonConfigFile::save_encrypted(const String &p_path, const PackedByteArray &p_key) const
+{
+    Ref<FileAccess> f = FileAccess::open_encrypted(p_path, FileAccess::WRITE, p_key);
+    if (f.is_null())
+        return f->get_open_error();
+
+    f->store_string(encode_to_text());
+    f->close();
+
+    return OK;
+}
+Error MorphonConfigFile::save_encrypted_pass(const String &p_path, const String &p_password) const
+{
+    Ref<FileAccess> f = FileAccess::open_encrypted_with_pass(p_path, FileAccess::WRITE, p_password);
+    if (f.is_null())
+        return f->get_open_error();
+
+    f->store_string(encode_to_text());
+    f->close();
+
+    return OK;
+}
+
+void MorphonConfigFile::clear()
+{
+    m_Values.clear();
+}
+
 void MorphonConfigFile::_bind_methods()
 {
     ClassDB::bind_method(D_METHOD("set_value", "section", "key", "value"), &MorphonConfigFile::set_value);
@@ -257,6 +256,7 @@ void MorphonConfigFile::_bind_methods()
     ClassDB::bind_method(D_METHOD("save", "path"), &MorphonConfigFile::save);
 
     ClassDB::bind_method(D_METHOD("encode_to_text"), &MorphonConfigFile::encode_to_text);
+    ClassDB::bind_method(D_METHOD("parse", "data"), &MorphonConfigFile::parse);
 
     ClassDB::bind_method(D_METHOD("load_encrypted", "path", "key"), &MorphonConfigFile::load_encrypted);
     ClassDB::bind_method(D_METHOD("load_encrypted_pass", "path", "password"), &MorphonConfigFile::load_encrypted_pass);
