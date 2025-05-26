@@ -2,6 +2,8 @@
 *.gen.*
 .godot/
 
+bin/
+
 # Ignore library files but not the gdextension file
 demo/bin/*
 !demo/bin/android
@@ -18,9 +20,6 @@ demo/bin/windows/*
 !demo/bin/windows/.gitkeep
 !demo/bin/*.gdextension
 .sconsign*.dblite
-
-# Ignore generated compile_commands.json
-compile_commands.json
 
 # Ignore files generated for documentation
 /src/gen

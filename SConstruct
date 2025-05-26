@@ -38,6 +38,8 @@ if env["platform"] == "macos":
         ),
         source=sources,
     )
+    
+    Default(library)
 elif env["platform"] == "ios":
     if env["ios_simulator"]:
         library = env.StaticLibrary(
@@ -49,10 +51,14 @@ elif env["platform"] == "ios":
             "demo/bin/Morphon.{}.{}.a".format(env["platform"], env["target"]),
             source=sources,
         )
+    
+    Default(library)
 else:
     library = env.SharedLibrary(
-        "demo/bin/Morphon{}{}".format(env["suffix"], env["SHLIBSUFFIX"]),
+        "bin/{}/Morphon{}{}".format(env['platform'], env["suffix"], env["SHLIBSUFFIX"]),
         source=sources,
     )
-
-Default(library)
+    copy = env.Install("demo/bin", library)
+    
+    default_args = [library, copy]
+    Default(*default_args)
