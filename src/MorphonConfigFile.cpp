@@ -196,7 +196,8 @@ void MorphonConfigFile::clear()
 
 Error MorphonConfigFile::ParseString(const String &stringData)
 {
-    JSON *json = memnew(JSON);
+    Ref<JSON> json;
+    json.instantiate();
     Error err = json->parse(stringData);
 
     if (err != OK)
@@ -206,7 +207,6 @@ Error MorphonConfigFile::ParseString(const String &stringData)
     }
 
     Variant jsonVariant = json->get_data();
-    memdelete(json);
 
     if (jsonVariant.get_type() != Variant::DICTIONARY)
         return ERR_INVALID_DATA;
@@ -214,16 +214,15 @@ Error MorphonConfigFile::ParseString(const String &stringData)
     Dictionary dict = jsonVariant;
     Array keys = dict.keys();
 
+    clear();
+
     for (int i = 0; i < keys.size(); i++)
     {
         Variant key = keys[i];
         Variant value = dict[key];
 
         if (value.get_type() != Variant::DICTIONARY)
-        {
-            clear();
             return ERR_INVALID_DATA;
-        }
 
         Dictionary valueDict = value;
         Array valueKeys = valueDict.keys();

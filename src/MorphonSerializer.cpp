@@ -24,10 +24,12 @@ Ref<SerializableResource> DeserializeSerializableResource(const Dictionary &data
     if (!script.is_valid())
         return nullptr;
 
-    Ref<SerializableResource> res = memnew(SerializableResource);
-    res->set_script(script);
+    Ref<SerializableResource> res;
+    res.instantiate();
 
+    res->set_script(script);
     res->call("_deserialize", data);
+
     return res;
 }
 
@@ -53,17 +55,14 @@ Variant SerializeRecursive(const Variant &var)
 
             // CSharp binding
             if (res->has_method("_serialize") && res->has_method("_deserialize"))
-            {
                 return SerializeSerializableResource(*res);
-            }
 
             if (res->is_local_to_scene())
                 return nullptr;
 
             return res->get_path();
         }
-
-        return nullptr;
+        break;
     }
     case Variant::DICTIONARY:
     {
@@ -90,10 +89,9 @@ Variant SerializeRecursive(const Variant &var)
         }
         return result;
     }
-    default:
-        return var;
-        break;
     }
+
+    return var;
 }
 
 Variant DeserializeRecursive(const Variant &var)
