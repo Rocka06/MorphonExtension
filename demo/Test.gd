@@ -12,10 +12,10 @@ func _ready():
 	config.set_value("Pets", "Dict", dict)
 	config.set_value("Pets", "Arr", arr)
 	config.set_value("Test", "SF", sf)
-	config.save("user://save.json")
+	config.save_encrypted_pass("user://save.json", "Test")
 	
 	config.clear()
-	config.load("user://save.json")
+	config.load_encrypted_pass("user://save.json", "Test")
 	
 	$AnimatedSprite2D.sprite_frames = config.get_value("Test", "SF")
 	$AnimatedSprite2D.play("new_animation")

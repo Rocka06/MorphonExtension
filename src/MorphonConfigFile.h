@@ -14,7 +14,6 @@ class MorphonConfigFile : public RefCounted
 private:
     HashMap<String, HashMap<String, Variant>> m_Values;
     Error parse(const String &p_data);
-    Variant HandleResourceSerialization(Object &obj);
     Error MorphonConfigFile::ParseString(const String &stringData);
 
 protected:

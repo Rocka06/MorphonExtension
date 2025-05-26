@@ -1,10 +1,10 @@
 #include "MorphonSerializer.h"
 
-Dictionary SerializeSerializableResource(SerializableResource &res)
+Dictionary SerializeSerializableResource(Object &obj)
 {
-    Dictionary data = res.call("_serialize");
+    Dictionary data = obj.call("_serialize");
     data = SerializeRecursive(data);
-    Ref<Script> s = res.get_script();
+    Ref<Script> s = obj.get_script();
     data["ScriptPath"] = s->get_path();
     return data;
 }
@@ -47,10 +47,16 @@ Variant SerializeRecursive(const Variant &var)
             SerializableResource *res = Object::cast_to<SerializableResource>(obj);
             return SerializeSerializableResource(*res);
         }
-
-        if (Object::cast_to<Resource>(obj))
+        else if (Object::cast_to<Resource>(obj))
         {
             Resource *res = Object::cast_to<Resource>(obj);
+
+            // CSharp binding
+            if (res->has_method("_serialize") && res->has_method("_deserialize"))
+            {
+                return SerializeSerializableResource(*res);
+            }
+
             if (res->is_local_to_scene())
                 return nullptr;
 

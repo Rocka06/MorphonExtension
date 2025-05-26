@@ -240,23 +240,6 @@ Error MorphonConfigFile::ParseString(const String &stringData)
     return OK;
 }
 
-Variant MorphonConfigFile::HandleResourceSerialization(Object &obj)
-{
-    Resource *res = Object::cast_to<Resource>(&obj);
-    SerializableResource *sRes = Object::cast_to<SerializableResource>(&obj);
-
-    if (sRes != nullptr)
-        return SerializeSerializableResource(*sRes);
-
-    if (res == nullptr)
-        return Variant();
-
-    if (res->is_local_to_scene())
-        return Variant();
-
-    return res->get_path();
-}
-
 void MorphonConfigFile::_bind_methods()
 {
     ClassDB::bind_method(D_METHOD("set_value", "section", "key", "value"), &MorphonConfigFile::set_value);

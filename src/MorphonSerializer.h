@@ -9,7 +9,7 @@
 
 using namespace godot;
 
-Dictionary SerializeSerializableResource(SerializableResource &res);
+Dictionary SerializeSerializableResource(Object &obj);
 Ref<SerializableResource> DeserializeSerializableResource(const Dictionary &data);
 
 Variant SerializeRecursive(const Variant &var);
