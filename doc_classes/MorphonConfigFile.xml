@@ -13,7 +13,7 @@
 				"some_key": 42,
 				"vehicle": {
 					"Brand": "Ford",
-					"ScriptPath": "res://Car.cs",
+					"._ScriptPath": "res://Car.cs",
 					"color": "4258ff98"
 				}
 			}

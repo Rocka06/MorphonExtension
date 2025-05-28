@@ -5,18 +5,18 @@ Dictionary SerializeSerializableResource(Object &obj)
     Dictionary data = obj.call("_serialize");
     data = SerializeRecursive(data);
     Ref<Script> s = obj.get_script();
-    data["ScriptPath"] = s->get_path();
+    data["._ScriptPath"] = s->get_path();
     return data;
 }
 
 Ref<SerializableResource> DeserializeSerializableResource(const Dictionary &data)
 {
-    if (!data.has("ScriptPath"))
+    if (!data.has("._ScriptPath"))
         return nullptr;
 
-    String path = data["ScriptPath"];
+    String path = data["._ScriptPath"];
 
-    if (!path.begins_with("res://"))
+    if (!IsValidPath(path))
         return nullptr;
 
     Ref<Script> script = ResourceLoader::get_singleton()->load(path);
@@ -103,8 +103,12 @@ Variant DeserializeRecursive(const Variant &var)
         String str = var;
         if (str.begins_with("res://"))
         {
-            return ResourceLoader::get_singleton()->load(str);
+            if (IsValidPath(str))
+                return ResourceLoader::get_singleton()->load(str);
+
+            return nullptr;
         }
+
         return var;
     }
     case Variant::DICTIONARY:
@@ -115,7 +119,7 @@ Variant DeserializeRecursive(const Variant &var)
         Array keys = dict.keys();
         for (int i = 0; i < keys.size(); ++i)
         {
-            if (keys[i] == "ScriptPath")
+            if (keys[i] == "._ScriptPath")
             {
                 // If we are deserializing a SerializableResources properties, we want to keep this one
                 result[keys[i]] = dict[keys[i]];
@@ -127,7 +131,7 @@ Variant DeserializeRecursive(const Variant &var)
             result[key] = val;
         }
 
-        if (dict.has("ScriptPath"))
+        if (dict.has("._ScriptPath"))
         {
             return DeserializeSerializableResource(result);
         }
@@ -146,4 +150,21 @@ Variant DeserializeRecursive(const Variant &var)
     default:
         return var;
     }
+}
+
+bool IsValidPath(const String &path)
+{
+    if (!path.begins_with("res://"))
+        return false;
+
+    if (path.find("..") != -1)
+        return false;
+
+    String abs_path = ProjectSettings::get_singleton()->globalize_path(path);
+    String abs_root = ProjectSettings::get_singleton()->globalize_path("res://");
+
+    if (!abs_path.begins_with(abs_root))
+        return false;
+
+    return true;
 }
