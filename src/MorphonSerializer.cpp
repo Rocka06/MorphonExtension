@@ -1,13 +1,16 @@
 #include "MorphonSerializer.h"
 
-HashMap<String, Ref<Script>> MorphonSerializer::RegisteredScripts;
+HashMap<String, String> MorphonSerializer::RegisteredScripts;
 
 void MorphonSerializer::RegisterScript(const String &name, const Ref<Script> &script)
 {
     if (!RegisteredScripts.has(name))
     {
-        RegisteredScripts.insert(name, script, RegisteredScripts.is_empty());
+        RegisteredScripts.insert(name, script->get_path(), RegisteredScripts.is_empty());
+        return;
     }
+
+    ERR_FAIL_MSG("You have already registered a script named \"" + name + "\"");
 }
 
 Dictionary MorphonSerializer::SerializeSerializableResource(Object &obj)
@@ -16,9 +19,9 @@ Dictionary MorphonSerializer::SerializeSerializableResource(Object &obj)
     data = SerializeRecursive(data);
     Ref<Script> s = obj.get_script();
 
-    for (const KeyValue<String, Ref<Script>> &kv : RegisteredScripts)
+    for (const KeyValue<String, String> &kv : RegisteredScripts)
     {
-        if (kv.value->get_path() == s->get_path())
+        if (kv.value == s->get_path())
         {
             data["._typeName"] = kv.key;
             return data;
@@ -38,7 +41,10 @@ Ref<SerializableResource> MorphonSerializer::DeserializeSerializableResource(con
     {
         if (i.key == type)
         {
-            Ref<Script> script = i.value;
+            if (!IsValidPath(i.value))
+                return nullptr;
+
+            Ref<Script> script = ResourceLoader::get_singleton()->load(i.value);
             Ref<SerializableResource> res;
             res.instantiate();
 
@@ -49,7 +55,6 @@ Ref<SerializableResource> MorphonSerializer::DeserializeSerializableResource(con
     }
 
     ERR_FAIL_V_MSG(nullptr, "Type \"" + type + "\" has not been registered! Register it with MorphonSerializer.RegisterScript(name, script)");
-    return nullptr;
 }
 
 Variant MorphonSerializer::SerializeRecursive(const Variant &var)

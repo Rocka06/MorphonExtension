@@ -19,7 +19,7 @@ protected:
     static void _bind_methods();
 
 public:
-    static HashMap<String, Ref<Script>> RegisteredScripts;
+    static HashMap<String, String> RegisteredScripts;
 
     static void RegisterScript(const String &name, const Ref<Script> &script);
 
