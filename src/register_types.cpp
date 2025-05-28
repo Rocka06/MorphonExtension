@@ -1,6 +1,5 @@
 #include "register_types.h"
 
-#include "SerializableResource.h"
 #include "MorphonConfigFile.h"
 
 #include <gdextension_interface.h>
@@ -16,7 +15,6 @@ void initialize_example_module(ModuleInitializationLevel p_level)
         return;
     }
 
-    GDREGISTER_CLASS(SerializableResource)
     GDREGISTER_CLASS(MorphonConfigFile)
     GDREGISTER_CLASS(MorphonSerializer)
 }

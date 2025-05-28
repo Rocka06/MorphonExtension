@@ -2,7 +2,6 @@
 #include <godot_cpp/templates/hash_map.hpp>
 #include <godot_cpp/classes/json.hpp>
 #include <godot_cpp/classes/file_access.hpp>
-#include "SerializableResource.h"
 #include "MorphonSerializer.h"
 
 using namespace godot;

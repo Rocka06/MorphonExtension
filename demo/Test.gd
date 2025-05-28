@@ -23,6 +23,7 @@ func _ready():
 	var dog := config.get_value("Pets", "Dog") as Dog
 	
 	$Sprite2D.texture = dog.icon
+	dog.Speak()
 	
 	var loadedArr := config.get_value("Pets", "Arr") as Array
 	for i in loadedArr:

@@ -7,7 +7,7 @@
 [ext_resource type="SpriteFrames" uid="uid://drq5a2qiid27j" path="res://Test.tres" id="5_q6r6c"]
 [ext_resource type="Script" uid="uid://cncsohtw8fbd7" path="res://Car.cs" id="6_kdubu"]
 
-[sub_resource type="SerializableResource" id="SerializableResource_d21ai"]
+[sub_resource type="Resource" id="SerializableResource_d21ai"]
 script = ExtResource("2_0e48y")
 type = "Golden Retriever"
 name = "Test"
@@ -17,20 +17,20 @@ metadata/_custom_type_script = "uid://dohyl58aklhff"
 
 [sub_resource type="Resource" id="Resource_kdubu"]
 script = ExtResource("6_kdubu")
-color = Color(1, 0, 0, 1)
+color = Color(0.487756, 1.02879e-06, 3.36915e-07, 1)
 Brand = "Ferrari"
 metadata/_custom_type_script = "uid://cncsohtw8fbd7"
 
 [sub_resource type="Resource" id="Resource_d21ai"]
 script = ExtResource("6_kdubu")
-color = Color(0, 0.427451, 0, 1)
-Brand = "Lamborghini"
+color = Color(0.86, 0, 0, 1)
+Brand = "Mazda"
 metadata/_custom_type_script = "uid://cncsohtw8fbd7"
 
 [sub_resource type="Resource" id="Resource_rj586"]
 script = ExtResource("6_kdubu")
-color = Color(1, 0, 0, 1)
-Brand = "Mazda"
+color = Color(0, 0.733333, 1, 1)
+Brand = "Ford"
 metadata/_custom_type_script = "uid://cncsohtw8fbd7"
 
 [node name="Node2D" type="Node2D"]

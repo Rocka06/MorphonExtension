@@ -12,13 +12,23 @@ void MorphonSerializer::RegisterScript(const String &name, const Ref<Script> &sc
 
     ERR_FAIL_MSG("You have already registered a script named \"" + name + "\"");
 }
-
-Dictionary MorphonSerializer::SerializeSerializableResource(Object &obj)
+void MorphonSerializer::RegisterScriptByPath(const String &name, const String &scriptPath)
 {
-    Dictionary data = obj.call("_serialize");
-    data = SerializeRecursive(data);
-    Ref<Script> s = obj.get_script();
+    if (!RegisteredScripts.has(name))
+    {
+        RegisteredScripts.insert(name, scriptPath, RegisteredScripts.is_empty());
+        return;
+    }
 
+    ERR_FAIL_MSG("You have already registered a script named \"" + name + "\"");
+}
+
+Dictionary MorphonSerializer::SerializeResource(const Resource &res)
+{
+    Dictionary data = GetResourceProperties(res);
+    data = SerializeRecursive(data);
+
+    Ref<Script> s = res.get_script();
     for (const KeyValue<String, String> &kv : RegisteredScripts)
     {
         if (kv.value == s->get_path())
@@ -30,37 +40,48 @@ Dictionary MorphonSerializer::SerializeSerializableResource(Object &obj)
 
     ERR_FAIL_V_MSG(Dictionary(), "Script \"" + s->get_path() + "\" has not been registered! Register it with MorphonSerializer.RegisterScript(name, script)");
 }
-
-Ref<SerializableResource> MorphonSerializer::DeserializeSerializableResource(const Dictionary &data)
+Ref<Resource> MorphonSerializer::DeserializeResource(const Dictionary &data)
 {
+    if (data.is_empty())
+        return nullptr;
+
     if (!data.has("._typeName"))
         return nullptr;
 
     String type = data["._typeName"];
-    for (auto &i : RegisteredScripts)
+    Ref<Script> script = GetRegisteredScript(type);
+
+    if (script == nullptr)
+        ERR_FAIL_V_MSG(nullptr, "Type \"" + type + "\" has not been registered! Register it with MorphonSerializer.RegisterScript(name, script)");
+
+    Ref<Resource> res;
+    res.instantiate();
+    res->set_script(script);
+
+    // We build the resource based on the property list not on the save data
+    Dictionary properties = GetResourceProperties(*res.ptr());
+    TypedArray<String> keys = properties.keys();
+
+    for (int i = 0; i < keys.size(); i++)
     {
-        if (i.key == type)
-        {
-            if (!IsValidPath(i.value))
-                return nullptr;
-
-            Ref<Script> script = ResourceLoader::get_singleton()->load(i.value);
-            Ref<SerializableResource> res;
-            res.instantiate();
-
-            res->set_script(script);
-            res->call("_deserialize", data);
-            return res;
-        }
+        String key = keys[i];
+        res->set(key, data[key]);
     }
 
-    ERR_FAIL_V_MSG(nullptr, "Type \"" + type + "\" has not been registered! Register it with MorphonSerializer.RegisterScript(name, script)");
+    return res;
 }
 
 Variant MorphonSerializer::SerializeRecursive(const Variant &var)
 {
     switch (var.get_type())
     {
+    case Variant::NIL:
+    case Variant::BOOL:
+    case Variant::INT:
+    case Variant::FLOAT:
+    case Variant::STRING:
+    case Variant::STRING_NAME:
+        return var;
     case Variant::OBJECT:
     {
         Object *obj = Object::cast_to<Object>(var);
@@ -68,23 +89,18 @@ Variant MorphonSerializer::SerializeRecursive(const Variant &var)
         if (!obj)
             return nullptr;
 
-        if (Object::cast_to<SerializableResource>(obj))
-        {
-            SerializableResource *res = Object::cast_to<SerializableResource>(obj);
-            return SerializeSerializableResource(*res);
-        }
-        else if (Object::cast_to<Resource>(obj))
+        if (Object::cast_to<Resource>(obj))
         {
             Resource *res = Object::cast_to<Resource>(obj);
 
-            // CSharp binding
-            if (res->has_method("_serialize") && res->has_method("_deserialize"))
-                return SerializeSerializableResource(*res);
+            // Check if it is a custom resource or a built in one
+            if (res->get_class() == "Resource")
+                return SerializeResource(*res);
 
-            if (res->is_local_to_scene())
-                return nullptr;
+            if (!res->is_local_to_scene())
+                return res->get_path();
 
-            return res->get_path();
+            return nullptr;
         }
         break;
     }
@@ -115,13 +131,18 @@ Variant MorphonSerializer::SerializeRecursive(const Variant &var)
     }
     }
 
-    return var;
+    return JSON::from_native(var);
 }
-
 Variant MorphonSerializer::DeserializeRecursive(const Variant &var)
 {
     switch (var.get_type())
     {
+    case Variant::NIL:
+    case Variant::BOOL:
+    case Variant::INT:
+    case Variant::FLOAT:
+    case Variant::STRING_NAME:
+        return var;
     case Variant::STRING:
     {
         String str = var;
@@ -160,7 +181,7 @@ Variant MorphonSerializer::DeserializeRecursive(const Variant &var)
 
         if (dict.has("._typeName"))
         {
-            return DeserializeSerializableResource(result);
+            return DeserializeResource(result);
         }
         return result;
     }
@@ -174,14 +195,48 @@ Variant MorphonSerializer::DeserializeRecursive(const Variant &var)
         }
         return result;
     }
-    default:
-        return var;
     }
+
+    return JSON::from_native(var);
 }
 
 void MorphonSerializer::_bind_methods()
 {
-    ClassDB::bind_static_method("MorphonSerializer", D_METHOD("RegisterScript", "name", "script"), &MorphonSerializer::RegisterScript);
+    ClassDB::bind_static_method("MorphonSerializer", D_METHOD("register_script", "name", "script"), &MorphonSerializer::RegisterScript);
+    ClassDB::bind_static_method("MorphonSerializer", D_METHOD("register_script_by_path", "name", "script_path"), &MorphonSerializer::RegisterScriptByPath);
+}
+
+Dictionary MorphonSerializer::GetResourceProperties(const Resource &res)
+{
+    Dictionary result;
+
+    TypedArray<Dictionary> properties = res.get_property_list();
+    for (int i = 0; i < properties.size(); i++)
+    {
+        Dictionary property = properties[i];
+        if ((int)property["usage"] & PROPERTY_USAGE_SCRIPT_VARIABLE)
+        {
+            result[property["name"]] = res.get(property["name"]);
+        }
+    }
+
+    return result;
+}
+
+Ref<Script> MorphonSerializer::GetRegisteredScript(const String &name)
+{
+    for (auto &i : RegisteredScripts)
+    {
+        if (i.key == name)
+        {
+            if (!IsValidPath(i.value))
+                return nullptr;
+
+            return ResourceLoader::get_singleton()->load(i.value);
+        }
+    }
+
+    return nullptr;
 }
 
 bool MorphonSerializer::IsValidPath(const String &path)
