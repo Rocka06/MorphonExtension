@@ -14,13 +14,9 @@ void MorphonSerializer::RegisterScript(const String &name, const Ref<Script> &sc
 }
 void MorphonSerializer::RegisterScriptByPath(const String &name, const String &scriptPath)
 {
-    if (!RegisteredScripts.has(name))
-    {
-        RegisteredScripts.insert(name, scriptPath, RegisteredScripts.is_empty());
-        return;
-    }
+    ERR_FAIL_COND_MSG(RegisteredScripts.has(name), "You have already registered a script named \"" + name + "\"");
 
-    ERR_FAIL_MSG("You have already registered a script named \"" + name + "\"");
+    RegisteredScripts.insert(name, scriptPath, RegisteredScripts.is_empty());
 }
 
 Dictionary MorphonSerializer::SerializeResource(const Resource &res)
@@ -200,12 +196,6 @@ Variant MorphonSerializer::DeserializeRecursive(const Variant &var)
     return JSON::from_native(var);
 }
 
-void MorphonSerializer::_bind_methods()
-{
-    ClassDB::bind_static_method("MorphonSerializer", D_METHOD("register_script", "name", "script"), &MorphonSerializer::RegisterScript);
-    ClassDB::bind_static_method("MorphonSerializer", D_METHOD("register_script_by_path", "name", "script_path"), &MorphonSerializer::RegisterScriptByPath);
-}
-
 Dictionary MorphonSerializer::GetResourceProperties(const Resource &res)
 {
     Dictionary result;
@@ -222,21 +212,17 @@ Dictionary MorphonSerializer::GetResourceProperties(const Resource &res)
 
     return result;
 }
-
 Ref<Script> MorphonSerializer::GetRegisteredScript(const String &name)
 {
-    for (auto &i : RegisteredScripts)
-    {
-        if (i.key == name)
-        {
-            if (!IsValidPath(i.value))
-                return nullptr;
+    String *path = RegisteredScripts.getptr(name);
 
-            return ResourceLoader::get_singleton()->load(i.value);
-        }
-    }
+    if (!path)
+        return nullptr;
 
-    return nullptr;
+    if (!IsValidPath(*path))
+        return nullptr;
+
+    return ResourceLoader::get_singleton()->load(*path);
 }
 
 bool MorphonSerializer::IsValidPath(const String &path)
@@ -254,4 +240,10 @@ bool MorphonSerializer::IsValidPath(const String &path)
         return false;
 
     return true;
+}
+
+void MorphonSerializer::_bind_methods()
+{
+    ClassDB::bind_static_method("MorphonSerializer", D_METHOD("register_script", "name", "script"), &MorphonSerializer::RegisterScript);
+    ClassDB::bind_static_method("MorphonSerializer", D_METHOD("register_script_by_path", "name", "script_path"), &MorphonSerializer::RegisterScriptByPath);
 }

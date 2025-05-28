@@ -21,7 +21,7 @@ public:
     static HashMap<String, String> RegisteredScripts;
 
     static void RegisterScript(const String &name, const Ref<Script> &script);
-    static void MorphonSerializer::RegisterScriptByPath(const String &name, const String &scriptPath);
+    static void RegisterScriptByPath(const String &name, const String &scriptPath);
 
     static Dictionary SerializeResource(const Resource &res);
     static Ref<Resource> DeserializeResource(const Dictionary &data);
@@ -30,7 +30,6 @@ public:
     static Variant DeserializeRecursive(const Variant &var);
 
     static Dictionary GetResourceProperties(const Resource &res);
-
     static Ref<Script> GetRegisteredScript(const String &name);
 
     static bool IsValidPath(const String &path);
