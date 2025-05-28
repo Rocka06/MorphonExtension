@@ -6,14 +6,28 @@
 #include <godot_cpp/classes/script.hpp>
 #include <godot_cpp/classes/resource_loader.hpp>
 #include <godot_cpp/classes/project_settings.hpp>
+#include <godot_cpp/templates/hash_map.hpp>
 #include "SerializableResource.h"
 
 using namespace godot;
 
-Dictionary SerializeSerializableResource(Object &obj);
-Ref<SerializableResource> DeserializeSerializableResource(const Dictionary &data);
+class MorphonSerializer : public Object
+{
+    GDCLASS(MorphonSerializer, Object)
 
-Variant SerializeRecursive(const Variant &var);
-Variant DeserializeRecursive(const Variant &var);
+protected:
+    static void _bind_methods();
 
-bool IsValidPath(const String &path);
+public:
+    static HashMap<String, Ref<Script>> RegisteredScripts;
+
+    static void RegisterScript(const String &name, const Ref<Script> &script);
+
+    static Dictionary SerializeSerializableResource(Object &obj);
+    static Ref<SerializableResource> DeserializeSerializableResource(const Dictionary &data);
+
+    static Variant SerializeRecursive(const Variant &var);
+    static Variant DeserializeRecursive(const Variant &var);
+
+    static bool IsValidPath(const String &path);
+};

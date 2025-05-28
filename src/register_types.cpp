@@ -18,6 +18,7 @@ void initialize_example_module(ModuleInitializationLevel p_level)
 
     GDREGISTER_CLASS(SerializableResource)
     GDREGISTER_CLASS(MorphonConfigFile)
+    GDREGISTER_CLASS(MorphonSerializer)
 }
 
 void uninitialize_example_module(ModuleInitializationLevel p_level)

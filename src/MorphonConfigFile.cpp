@@ -131,7 +131,7 @@ String MorphonConfigFile::encode_to_text() const
         Dictionary nestedDict;
         for (auto j : i.value)
         {
-            nestedDict[j.key] = SerializeRecursive(j.value);
+            nestedDict[j.key] = MorphonSerializer::SerializeRecursive(j.value);
         }
 
         dict[i.key] = nestedDict;
@@ -177,7 +177,7 @@ Error MorphonConfigFile::parse(const String &data)
             Variant key1 = valueKeys[j];
             Variant value1 = valueDict[key1];
 
-            m_Values[key][key1] = DeserializeRecursive(value1);
+            m_Values[key][key1] = MorphonSerializer::DeserializeRecursive(value1);
         }
     }
 

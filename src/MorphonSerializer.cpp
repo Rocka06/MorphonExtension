@@ -1,39 +1,58 @@
 #include "MorphonSerializer.h"
 
-Dictionary SerializeSerializableResource(Object &obj)
+HashMap<String, Ref<Script>> MorphonSerializer::RegisteredScripts;
+
+void MorphonSerializer::RegisterScript(const String &name, const Ref<Script> &script)
+{
+    if (!RegisteredScripts.has(name))
+    {
+        RegisteredScripts.insert(name, script, RegisteredScripts.is_empty());
+    }
+}
+
+Dictionary MorphonSerializer::SerializeSerializableResource(Object &obj)
 {
     Dictionary data = obj.call("_serialize");
     data = SerializeRecursive(data);
     Ref<Script> s = obj.get_script();
-    data["._ScriptPath"] = s->get_path();
-    return data;
+
+    for (const KeyValue<String, Ref<Script>> &kv : RegisteredScripts)
+    {
+        if (kv.value->get_path() == s->get_path())
+        {
+            data["._typeName"] = kv.key;
+            return data;
+        }
+    }
+
+    ERR_FAIL_V_MSG(Dictionary(), "Script \"" + s->get_path() + "\" has not been registered! Register it with MorphonSerializer.RegisterScript(name, script)");
 }
 
-Ref<SerializableResource> DeserializeSerializableResource(const Dictionary &data)
+Ref<SerializableResource> MorphonSerializer::DeserializeSerializableResource(const Dictionary &data)
 {
-    if (!data.has("._ScriptPath"))
+    if (!data.has("._typeName"))
         return nullptr;
 
-    String path = data["._ScriptPath"];
+    String type = data["._typeName"];
+    for (auto &i : RegisteredScripts)
+    {
+        if (i.key == type)
+        {
+            Ref<Script> script = i.value;
+            Ref<SerializableResource> res;
+            res.instantiate();
 
-    if (!IsValidPath(path))
-        return nullptr;
+            res->set_script(script);
+            res->call("_deserialize", data);
+            return res;
+        }
+    }
 
-    Ref<Script> script = ResourceLoader::get_singleton()->load(path);
-
-    if (!script.is_valid())
-        return nullptr;
-
-    Ref<SerializableResource> res;
-    res.instantiate();
-
-    res->set_script(script);
-    res->call("_deserialize", data);
-
-    return res;
+    ERR_FAIL_V_MSG(nullptr, "Type \"" + type + "\" has not been registered! Register it with MorphonSerializer.RegisterScript(name, script)");
+    return nullptr;
 }
 
-Variant SerializeRecursive(const Variant &var)
+Variant MorphonSerializer::SerializeRecursive(const Variant &var)
 {
     switch (var.get_type())
     {
@@ -94,7 +113,7 @@ Variant SerializeRecursive(const Variant &var)
     return var;
 }
 
-Variant DeserializeRecursive(const Variant &var)
+Variant MorphonSerializer::DeserializeRecursive(const Variant &var)
 {
     switch (var.get_type())
     {
@@ -103,6 +122,9 @@ Variant DeserializeRecursive(const Variant &var)
         String str = var;
         if (str.begins_with("res://"))
         {
+            if (str.to_lower().ends_with(".gd") || str.to_lower().ends_with(".cs"))
+                return nullptr;
+
             if (IsValidPath(str))
                 return ResourceLoader::get_singleton()->load(str);
 
@@ -119,7 +141,7 @@ Variant DeserializeRecursive(const Variant &var)
         Array keys = dict.keys();
         for (int i = 0; i < keys.size(); ++i)
         {
-            if (keys[i] == "._ScriptPath")
+            if (keys[i] == "._typeName")
             {
                 // If we are deserializing a SerializableResources properties, we want to keep this one
                 result[keys[i]] = dict[keys[i]];
@@ -131,7 +153,7 @@ Variant DeserializeRecursive(const Variant &var)
             result[key] = val;
         }
 
-        if (dict.has("._ScriptPath"))
+        if (dict.has("._typeName"))
         {
             return DeserializeSerializableResource(result);
         }
@@ -152,7 +174,12 @@ Variant DeserializeRecursive(const Variant &var)
     }
 }
 
-bool IsValidPath(const String &path)
+void MorphonSerializer::_bind_methods()
+{
+    ClassDB::bind_static_method("MorphonSerializer", D_METHOD("RegisterScript", "name", "script"), &MorphonSerializer::RegisterScript);
+}
+
+bool MorphonSerializer::IsValidPath(const String &path)
 {
     if (!path.begins_with("res://"))
         return false;
