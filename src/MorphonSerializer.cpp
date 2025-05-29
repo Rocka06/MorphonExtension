@@ -1,42 +1,97 @@
 #include "MorphonSerializer.h"
 
-Dictionary SerializeSerializableResource(Object &obj)
+HashMap<String, String> MorphonSerializer::RegisteredScripts;
+
+void MorphonSerializer::RegisterScript(const String &name, const Ref<Script> &script)
 {
-    Dictionary data = obj.call("_serialize");
-    data = SerializeRecursive(data);
-    Ref<Script> s = obj.get_script();
-    data["._ScriptPath"] = s->get_path();
-    return data;
+    if (!RegisteredScripts.has(name))
+    {
+        RegisteredScripts.insert(name, script->get_path(), RegisteredScripts.is_empty());
+        return;
+    }
+
+    ERR_FAIL_MSG("You have already registered a script named \"" + name + "\"");
+}
+void MorphonSerializer::RegisterScriptByPath(const String &name, const String &scriptPath)
+{
+    ERR_FAIL_COND_MSG(RegisteredScripts.has(name), "You have already registered a script named \"" + name + "\"");
+
+    RegisteredScripts.insert(name, scriptPath, RegisteredScripts.is_empty());
 }
 
-Ref<SerializableResource> DeserializeSerializableResource(const Dictionary &data)
+Dictionary MorphonSerializer::SerializeResource(Resource &res)
 {
-    if (!data.has("._ScriptPath"))
+    Dictionary data;
+
+    if (res.has_method("_serialize"))
+        data = res.call("_serialize");
+    else
+        data = GetResourceProperties(res);
+
+    data = SerializeRecursive(data);
+
+    Ref<Script> s = res.get_script();
+    String scriptPath = s->get_path();
+    for (const KeyValue<String, String> &kv : RegisteredScripts)
+    {
+        if (kv.value == scriptPath)
+        {
+            data["._typeName"] = kv.key;
+            return data;
+        }
+    }
+
+    ERR_FAIL_V_MSG(Dictionary(), "Script \"" + scriptPath + "\" has not been registered! Register it with MorphonSerializer.RegisterScript(name, script)");
+}
+Ref<Resource> MorphonSerializer::DeserializeResource(const Dictionary &data)
+{
+    if (data.is_empty())
         return nullptr;
 
-    String path = data["._ScriptPath"];
-
-    if (!IsValidPath(path))
+    if (!data.has("._typeName"))
         return nullptr;
 
-    Ref<Script> script = ResourceLoader::get_singleton()->load(path);
+    String type = data["._typeName"];
+    Ref<Script> script = GetRegisteredScript(type);
 
-    if (!script.is_valid())
-        return nullptr;
+    if (script == nullptr)
+        ERR_FAIL_V_MSG(nullptr, "Type \"" + type + "\" has not been registered! Register it with MorphonSerializer.RegisterScript(name, script)");
 
-    Ref<SerializableResource> res;
+    Ref<Resource> res;
     res.instantiate();
-
     res->set_script(script);
-    res->call("_deserialize", data);
+
+    if (res->has_method("_deserialize"))
+    {
+        res->call("_deserialize", data);
+        return res;
+    }
+
+    // We build the resource based on the property list not on the save data
+    Dictionary properties = GetResourceProperties(*res.ptr());
+    TypedArray<String> keys = properties.keys();
+
+    for (int i = 0; i < keys.size(); i++)
+    {
+        String key = keys[i];
+        if (data.has(key))
+            res->set(key, data[key]);
+    }
 
     return res;
 }
 
-Variant SerializeRecursive(const Variant &var)
+Variant MorphonSerializer::SerializeRecursive(const Variant &var)
 {
     switch (var.get_type())
     {
+    case Variant::NIL:
+    case Variant::BOOL:
+    case Variant::INT:
+    case Variant::FLOAT:
+    case Variant::STRING:
+    case Variant::STRING_NAME:
+        return var;
     case Variant::OBJECT:
     {
         Object *obj = Object::cast_to<Object>(var);
@@ -44,23 +99,18 @@ Variant SerializeRecursive(const Variant &var)
         if (!obj)
             return nullptr;
 
-        if (Object::cast_to<SerializableResource>(obj))
-        {
-            SerializableResource *res = Object::cast_to<SerializableResource>(obj);
-            return SerializeSerializableResource(*res);
-        }
-        else if (Object::cast_to<Resource>(obj))
+        if (Object::cast_to<Resource>(obj))
         {
             Resource *res = Object::cast_to<Resource>(obj);
 
-            // CSharp binding
-            if (res->has_method("_serialize") && res->has_method("_deserialize"))
-                return SerializeSerializableResource(*res);
+            // Check if it is a custom resource or a built in one
+            if (res->get_class() == "Resource")
+                return SerializeResource(*res);
 
-            if (res->is_local_to_scene())
-                return nullptr;
+            if (!res->is_local_to_scene())
+                return res->get_path();
 
-            return res->get_path();
+            return nullptr;
         }
         break;
     }
@@ -91,18 +141,26 @@ Variant SerializeRecursive(const Variant &var)
     }
     }
 
-    return var;
+    return JSON::from_native(var);
 }
-
-Variant DeserializeRecursive(const Variant &var)
+Variant MorphonSerializer::DeserializeRecursive(const Variant &var)
 {
     switch (var.get_type())
     {
+    case Variant::NIL:
+    case Variant::BOOL:
+    case Variant::INT:
+    case Variant::FLOAT:
+    case Variant::STRING_NAME:
+        return var;
     case Variant::STRING:
     {
         String str = var;
         if (str.begins_with("res://"))
         {
+            if (str.to_lower().ends_with(".gd") || str.to_lower().ends_with(".cs"))
+                return nullptr;
+
             if (IsValidPath(str))
                 return ResourceLoader::get_singleton()->load(str);
 
@@ -115,26 +173,24 @@ Variant DeserializeRecursive(const Variant &var)
     {
         Dictionary dict = var;
 
+        // Check if it was created by JSON.from_native
+        if (dict.has("type") && dict.has("args"))
+            return JSON::to_native(dict);
+
         Dictionary result;
         Array keys = dict.keys();
         for (int i = 0; i < keys.size(); ++i)
         {
-            if (keys[i] == "._ScriptPath")
-            {
-                // If we are deserializing a SerializableResources properties, we want to keep this one
-                result[keys[i]] = dict[keys[i]];
-                continue;
-            }
-
             Variant key = DeserializeRecursive(keys[i]);
             Variant val = DeserializeRecursive(dict[keys[i]]);
             result[key] = val;
         }
 
-        if (dict.has("._ScriptPath"))
+        if (dict.has("._typeName"))
         {
-            return DeserializeSerializableResource(result);
+            return DeserializeResource(result);
         }
+
         return result;
     }
     case Variant::ARRAY:
@@ -147,12 +203,41 @@ Variant DeserializeRecursive(const Variant &var)
         }
         return result;
     }
-    default:
-        return var;
     }
+
+    return JSON::to_native(var);
 }
 
-bool IsValidPath(const String &path)
+Dictionary MorphonSerializer::GetResourceProperties(const Resource &res)
+{
+    Dictionary result;
+
+    TypedArray<Dictionary> properties = res.get_property_list();
+    for (int i = 0; i < properties.size(); i++)
+    {
+        Dictionary property = properties[i];
+        if ((int)property["usage"] & PROPERTY_USAGE_SCRIPT_VARIABLE)
+        {
+            result[property["name"]] = res.get(property["name"]);
+        }
+    }
+
+    return result;
+}
+Ref<Script> MorphonSerializer::GetRegisteredScript(const String &name)
+{
+    String *path = RegisteredScripts.getptr(name);
+
+    if (!path)
+        return nullptr;
+
+    if (!IsValidPath(*path))
+        return nullptr;
+
+    return ResourceLoader::get_singleton()->load(*path);
+}
+
+bool MorphonSerializer::IsValidPath(const String &path)
 {
     if (!path.begins_with("res://"))
         return false;
@@ -167,4 +252,10 @@ bool IsValidPath(const String &path)
         return false;
 
     return true;
+}
+
+void MorphonSerializer::_bind_methods()
+{
+    ClassDB::bind_static_method("MorphonSerializer", D_METHOD("register_script", "name", "script"), &MorphonSerializer::RegisterScript);
+    ClassDB::bind_static_method("MorphonSerializer", D_METHOD("register_script_by_path", "name", "script_path"), &MorphonSerializer::RegisterScriptByPath);
 }

@@ -1,14 +1,15 @@
-[gd_scene load_steps=12 format=3 uid="uid://cgv238y0s71ab"]
+[gd_scene load_steps=14 format=3 uid="uid://cgv238y0s71ab"]
 
 [ext_resource type="Script" uid="uid://bbfutgsjvqep2" path="res://Test.gd" id="1_wtcfe"]
 [ext_resource type="Script" uid="uid://dohyl58aklhff" path="res://Dog.gd" id="2_0e48y"]
 [ext_resource type="Texture2D" uid="uid://c83fil2png5vg" path="res://icon.svg" id="2_0hol4"]
+[ext_resource type="Script" uid="uid://bj5no25l2hbw1" path="res://Animal.gd" id="4_rj586"]
+[ext_resource type="Script" uid="uid://ckx4nodr4nsyn" path="res://Cat.gd" id="5_4d7sh"]
 [ext_resource type="Script" uid="uid://cksk7elxkdfox" path="res://TestCSharpBindings.cs" id="5_kdubu"]
 [ext_resource type="SpriteFrames" uid="uid://drq5a2qiid27j" path="res://Test.tres" id="5_q6r6c"]
-[ext_resource type="Script" uid="uid://cx2g7yuaonho5" path="res://Vehicle.cs" id="6_d21ai"]
 [ext_resource type="Script" uid="uid://cncsohtw8fbd7" path="res://Car.cs" id="6_kdubu"]
 
-[sub_resource type="SerializableResource" id="SerializableResource_d21ai"]
+[sub_resource type="Resource" id="SerializableResource_d21ai"]
 script = ExtResource("2_0e48y")
 type = "Golden Retriever"
 name = "Test"
@@ -16,26 +17,36 @@ age = 2
 icon = ExtResource("2_0hol4")
 metadata/_custom_type_script = "uid://dohyl58aklhff"
 
-[sub_resource type="Resource" id="Resource_4d7sh"]
-script = ExtResource("6_d21ai")
-Brand = "Lamborghini"
-metadata/_custom_type_script = "uid://cx2g7yuaonho5"
+[sub_resource type="Resource" id="Resource_ir8iy"]
+script = ExtResource("5_4d7sh")
+color = Color(1, 0.566667, 0, 1)
+byteArray = PackedByteArray(0, 138, 11)
+name = "El Gato"
+age = 3
+metadata/_custom_type_script = "uid://ckx4nodr4nsyn"
+
+[sub_resource type="Resource" id="Resource_kdubu"]
+script = ExtResource("6_kdubu")
+color = Color(0.487756, 1.02879e-06, 3.36915e-07, 1)
+Brand = "Ferrari"
+metadata/_custom_type_script = "uid://cncsohtw8fbd7"
 
 [sub_resource type="Resource" id="Resource_d21ai"]
 script = ExtResource("6_kdubu")
-color = Color(1, 0, 0, 1)
-Brand = "Ferrari"
+color = Color(0.86, 0, 0, 1)
+Brand = "Mazda"
 metadata/_custom_type_script = "uid://cncsohtw8fbd7"
 
 [sub_resource type="Resource" id="Resource_rj586"]
 script = ExtResource("6_kdubu")
-color = Color(0.257346, 0.3447, 1, 0.596078)
+color = Color(0, 0.733333, 1, 1)
 Brand = "Ford"
 metadata/_custom_type_script = "uid://cncsohtw8fbd7"
 
 [node name="Node2D" type="Node2D"]
 script = ExtResource("1_wtcfe")
 res = SubResource("SerializableResource_d21ai")
+arr = Array[ExtResource("4_rj586")]([SubResource("Resource_ir8iy")])
 sf = ExtResource("5_q6r6c")
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
@@ -45,5 +56,5 @@ position = Vector2(174.165, 0)
 
 [node name="CSharp" type="Node2D" parent="."]
 script = ExtResource("5_kdubu")
-vehicle = SubResource("Resource_4d7sh")
+vehicle = SubResource("Resource_kdubu")
 cars = Array[Object]([SubResource("Resource_d21ai"), SubResource("Resource_rj586")])

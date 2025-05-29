@@ -11,6 +11,9 @@ public partial class TestCSharpBindings : Node
 
     public override void _Ready()
     {
+        MorphonSerializer.RegisterScriptByPath("Vehicle", "res://Vehicle.cs");
+        MorphonSerializer.RegisterScriptByPath("Car", "res://Car.cs");
+
         config.SetValue("Test", "vehicle", vehicle);
         config.SetValue("Test", "Cars", cars);
 
