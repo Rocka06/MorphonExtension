@@ -19,22 +19,29 @@ void MorphonSerializer::RegisterScriptByPath(const String &name, const String &s
     RegisteredScripts.insert(name, scriptPath, RegisteredScripts.is_empty());
 }
 
-Dictionary MorphonSerializer::SerializeResource(const Resource &res)
+Dictionary MorphonSerializer::SerializeResource(Resource &res)
 {
-    Dictionary data = GetResourceProperties(res);
+    Dictionary data;
+
+    if (res.has_method("_serialize"))
+        data = res.call("_serialize");
+    else
+        data = GetResourceProperties(res);
+
     data = SerializeRecursive(data);
 
     Ref<Script> s = res.get_script();
+    String scriptPath = s->get_path();
     for (const KeyValue<String, String> &kv : RegisteredScripts)
     {
-        if (kv.value == s->get_path())
+        if (kv.value == scriptPath)
         {
             data["._typeName"] = kv.key;
             return data;
         }
     }
 
-    ERR_FAIL_V_MSG(Dictionary(), "Script \"" + s->get_path() + "\" has not been registered! Register it with MorphonSerializer.RegisterScript(name, script)");
+    ERR_FAIL_V_MSG(Dictionary(), "Script \"" + scriptPath + "\" has not been registered! Register it with MorphonSerializer.RegisterScript(name, script)");
 }
 Ref<Resource> MorphonSerializer::DeserializeResource(const Dictionary &data)
 {
@@ -54,6 +61,12 @@ Ref<Resource> MorphonSerializer::DeserializeResource(const Dictionary &data)
     res.instantiate();
     res->set_script(script);
 
+    if (res->has_method("_deserialize"))
+    {
+        res->call("_deserialize", data);
+        return res;
+    }
+
     // We build the resource based on the property list not on the save data
     Dictionary properties = GetResourceProperties(*res.ptr());
     TypedArray<String> keys = properties.keys();
@@ -61,7 +74,8 @@ Ref<Resource> MorphonSerializer::DeserializeResource(const Dictionary &data)
     for (int i = 0; i < keys.size(); i++)
     {
         String key = keys[i];
-        res->set(key, data[key]);
+        if (data.has(key))
+            res->set(key, data[key]);
     }
 
     return res;
@@ -159,17 +173,14 @@ Variant MorphonSerializer::DeserializeRecursive(const Variant &var)
     {
         Dictionary dict = var;
 
+        // Check if it was created by JSON.from_native
+        if (dict.has("type") && dict.has("args"))
+            return JSON::to_native(dict);
+
         Dictionary result;
         Array keys = dict.keys();
         for (int i = 0; i < keys.size(); ++i)
         {
-            if (keys[i] == "._typeName")
-            {
-                // If we are deserializing a SerializableResources properties, we want to keep this one
-                result[keys[i]] = dict[keys[i]];
-                continue;
-            }
-
             Variant key = DeserializeRecursive(keys[i]);
             Variant val = DeserializeRecursive(dict[keys[i]]);
             result[key] = val;
@@ -179,6 +190,7 @@ Variant MorphonSerializer::DeserializeRecursive(const Variant &var)
         {
             return DeserializeResource(result);
         }
+
         return result;
     }
     case Variant::ARRAY:
@@ -193,7 +205,7 @@ Variant MorphonSerializer::DeserializeRecursive(const Variant &var)
     }
     }
 
-    return JSON::from_native(var);
+    return JSON::to_native(var);
 }
 
 Dictionary MorphonSerializer::GetResourceProperties(const Resource &res)

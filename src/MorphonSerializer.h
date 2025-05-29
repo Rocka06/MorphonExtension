@@ -23,7 +23,7 @@ public:
     static void RegisterScript(const String &name, const Ref<Script> &script);
     static void RegisterScriptByPath(const String &name, const String &scriptPath);
 
-    static Dictionary SerializeResource(const Resource &res);
+    static Dictionary SerializeResource(Resource &res);
     static Ref<Resource> DeserializeResource(const Dictionary &data);
 
     static Variant SerializeRecursive(const Variant &var);
