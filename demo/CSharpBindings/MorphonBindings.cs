@@ -1,12 +1,27 @@
 using System;
+using System.Reflection;
 using Godot;
 
 public partial class MorphonConfigFile : RefCounted
 {
     private Variant m_Config;
+    private ConfigFile asd;
 
     public MorphonConfigFile()
     {
+        //Register C# types
+        Type baseType = typeof(Resource);
+        foreach (Type type in Assembly.GetExecutingAssembly().GetTypes())
+        {
+            if (!baseType.IsAssignableFrom(type) || type.IsAbstract) continue;
+
+            Resource res = (Resource)Activator.CreateInstance(type);
+            Script script = res.GetScript().As<Script>();
+            MorphonSerializer.RegisterScriptByPath(type.FullName, script.ResourcePath);
+        }
+
+        GC.Collect();
+
         m_Config = ClassDB.Instantiate("MorphonConfigFile");
     }
 
@@ -17,6 +32,10 @@ public partial class MorphonConfigFile : RefCounted
     public Variant GetValue(string section, string key, Variant @default = default)
     {
         return m_Config.As<GodotObject>().Call("get_value", section, key, @default);
+    }
+    public T GetValue<[MustBeVariant] T>(string section, string key, T @default = default)
+    {
+        return m_Config.As<GodotObject>().Call("get_value", section, key, Variant.From(@default)).As<T>();
     }
     public bool HasSection(string section)
     {
@@ -78,5 +97,18 @@ public partial class MorphonConfigFile : RefCounted
     {
         m_Config = ClassDB.Instantiate("MorphonConfigFile");
         GC.Collect();
+    }
+}
+
+public partial class MorphonSerializer : GodotObject
+{
+    public static void RegisterScript(string name, Script script)
+    {
+        ClassDB.ClassCallStatic("MorphonSerializer", "register_script", name, script);
+    }
+
+    public static void RegisterScriptByPath(string name, string scriptPath)
+    {
+        ClassDB.ClassCallStatic("MorphonSerializer", "register_script_by_path", name, scriptPath);
     }
 }

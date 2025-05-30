@@ -86,11 +86,11 @@ jobs:
           cache-name: ${{ matrix.target.platform }}_${{ matrix.target.arch }}_${{ matrix.float-precision }}_${{ matrix.target-type }}
 
       # Clean up compilation files
-      - name: Windows - Delete compilation files
-        if: ${{ matrix.target.platform == 'windows' }}
-        shell: pwsh
+      - name: Delete Unnecessary Compilation Files
+        shell: bash
         run: |
-          Remove-Item bin/* -Include *.exp,*.lib,*.pdb -Force
+          find ./bin -type f \( -name "*.exp" -o -name "*.lib" -o -name "*.pdb" \) -delete
+
 
       # Upload the build
       - name: Upload Artifact

@@ -9,11 +9,10 @@ public partial class TestCSharpBindings : Node
     [Export] Vehicle vehicle;
     [Export] Car[] cars;
 
+    [Export] Label label;
+
     public override void _Ready()
     {
-        MorphonSerializer.RegisterScriptByPath("Vehicle", "res://Vehicle.cs");
-        MorphonSerializer.RegisterScriptByPath("Car", "res://Car.cs");
-
         config.SetValue("Test", "vehicle", vehicle);
         config.SetValue("Test", "Cars", cars);
 
@@ -21,8 +20,8 @@ public partial class TestCSharpBindings : Node
         config.Clear();
         config.Load("user://csharpSave.json");
 
-        Car[] loadedCars = config.GetValue("Test", "Cars").As<Array<Car>>().ToArray<Car>();
+        Car[] loadedCars = config.GetValue("Test", "Cars").As<Array<Car>>().ToArray();
 
-        GD.Print(loadedCars[1].Brand);
+        label.Text = loadedCars[1].Brand;
     }
 }

@@ -54,7 +54,14 @@ sf = ExtResource("5_q6r6c")
 [node name="Sprite2D" type="Sprite2D" parent="."]
 position = Vector2(174.165, 0)
 
-[node name="CSharp" type="Node2D" parent="."]
+[node name="CSharp" type="Node2D" parent="." node_paths=PackedStringArray("label")]
 script = ExtResource("5_kdubu")
 vehicle = SubResource("Resource_kdubu")
 cars = Array[Object]([SubResource("Resource_d21ai"), SubResource("Resource_rj586")])
+label = NodePath("../Label")
+
+[node name="Label" type="Label" parent="."]
+offset_left = 587.0
+offset_top = 245.0
+offset_right = 627.0
+offset_bottom = 268.0
